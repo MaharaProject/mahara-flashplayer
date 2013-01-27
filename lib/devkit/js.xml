@@ -1,7 +1,13 @@
 <project name="Common build file used by JS plugins" default="min">
 
 	<!-- additional tasks -->
-	<taskdef resource="net/sf/antcontrib/antlib.xml"/>
+	<!--taskdef resource="net/sf/antcontrib/antlib.xml"/-->
+    <!--taskdef resource="net/sf/antcontrib/antcontrib.properties" /-->
+	<taskdef resource="net/sf/antcontrib/antcontrib.properties">
+	    <classpath>
+	    	<pathelement location="/usr/share/java/ant-contrib.jar" />
+	    </classpath>
+	</taskdef>
 
 	<property name="shortname" value="${ant.project.name}"/>
 
