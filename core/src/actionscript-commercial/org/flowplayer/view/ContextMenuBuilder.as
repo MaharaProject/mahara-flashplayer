@@ -112,6 +112,7 @@ package org.flowplayer.view {
 			// 1 copyright notice
 			var date:Date = new Date();
 			addItem(menu, new ContextMenuItem("Copyright © 2008-" + date.fullYear + " Flowplayer Oy", true, false));
+			addItem(menu, new ContextMenuItem("Flowplayer Source code modified by Mahara 2013", false, false));
 			// 2 NO WARRANTY
 			addItem(menu, new ContextMenuItem("Flowplayer comes without any warranty", false, false));
 			// 3 Link to license
