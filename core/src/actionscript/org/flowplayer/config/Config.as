@@ -75,7 +75,9 @@ package org.flowplayer.config {
 
         private function copyProps(target:Object, source:Object, propName:String = null):Object {
             if (source is Number || source is String || source is Boolean) {
-                target = source;
+            	if (!(source is String) || (source as String).indexOf("://") == -1){
+                    target = source;
+                }
                 return target;
             }
 
@@ -92,7 +94,9 @@ package org.flowplayer.config {
                 if (target.hasOwnProperty(key)) {
                     target[key] = copyProps(target[key], source[key], key);
                 } else {
-                    target[key] = source[key];
+                    if (!(source[key] is String) || (source[key] as String).indexOf("://") == -1) {
+                        target[key] = source[key];
+                    }
                 }
             }
             return target;
