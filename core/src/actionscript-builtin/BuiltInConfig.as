@@ -24,9 +24,17 @@ public class BuiltInConfig {
 //        "rtmp": {
 //            "url": 'org.flowplayer.rtmp.RTMPStreamProvider'
 //        },
-//        "controls": {
-//            "url": 'org.flowplayer.controls.Controls'
-//		}
+        "controls": {
+            "url": 'org.flowplayer.controls.Controls',
+            "play": true,
+            "volume": true,
+            "mute": true,
+            "time": false,
+            "stop": false,
+            "playlist": false,
+            "fullscreen": true,
+            "scrubber": true
+        }
 //           viral: {
 //               url: 'org.flowplayer.shareembed.ShareEmbed'
            }
