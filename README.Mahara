@@ -6,11 +6,35 @@ It is based on the FlowPlayer source code. In accordance with the FlowPlayer
 GPL license, it has been renamed to "mahara-flashplayer" for distribution.
 
 Website: https://github.com/catalyst/mahara-flashplayer
-Version: 3.2.16dev
-
+Version: 3.2.18
 
 Modifications:
  - Modified to disallow absolute URLs in configuration parameters, because it is
 intended only to display internally hosted media.
  - Because the source code has been modified, in accordance with the FlowPlayer 
 GPL License addendum, the FlowPlayer mark and logo have been removed
+
+
+=== BUILD INSTRUCTIONS ===
+
+1. There are outdated build instructions up on the flowplayer website, at http://flash.flowplayer.org/documentation/developer/development-environment.html and http://flash.flowplayer.org/documentation/developer/building-in-plugins.html . You may still get some useful information from them. The main difference is that the build files now live in the flash-build (aka mahara-flashplayer-build) project.
+
+2. Install Apache ant, and install the Flex SDK. You will need to know the path to your Flex SDK's bin directory.
+
+3. Clone the mahara-flashplayer-tld and mahara-flashplayer-build projects in addition to this one (the mahara-flashplayer project)
+
+4. The build scripts are in the mahara-flashplayer-build project. They expect the three repositories you've cloned to be in a directory together, and to be named "tld", "flash-build", and "flash". You can accomplish this by either moving and renaming the directories, or creating symlinks.
+
+5. cd into the flash-build directory.
+
+6. Edit build.properties and plugin-build.properties to have the correct "flexdir" path to your Flex SDK bin directory.
+
+7. Edit build.properties to have a valid "site.dir" path. This is where the default "build" command will deploy some of the files.
+
+8. Do "ant build plugins-all"
+
+9. Copy these files into the artefact/file/blocktype/internalmedia/mahara-flashplayer directory:
+
+ - flash-build/build/mahara-flashplayer.swf
+ - flash-build/build/mahara-flashplayer.controls.swf
+ - flash-build/dist/flowplayer.js (copy this to mahara-flashplayer.js)
