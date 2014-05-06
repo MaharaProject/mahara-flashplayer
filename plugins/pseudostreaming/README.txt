@@ -1,5 +1,13 @@
 Version history:
 
+3.2.13 (Nov 2013)
+-----------------
+- #88 fix for bitrate switching updates on metadata change events since changes to the metadata events.
+
+3.2.12
+------
+- #31 fix to dispatch start events properly when loading new items.
+
 3.2.10
 -----
 - #568 fix for bitrate switching in paused mode, pause the stream only during seeking while paused. now dispatched seek events while paused.

@@ -1,5 +1,5 @@
 /*!
- * flowplayer.js @VERSION. The Flowplayer API
+ * flowplayer.js The Flowplayer API
  *
  * Copyright 2009-2011 Flowplayer Oy
  *
@@ -18,10 +18,8 @@
  * You should have received a copy of the GNU General Public License
  * along with Flowplayer.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Date: @DATE
- * Revision: @REVISION
  */
-(function() {
+!function() {
 
 /*
 	FEATURES
@@ -138,6 +136,10 @@
 		to[evt].push(fn);
 	}
 
+	// escape & and = in config written into flashvars (issue #21)
+	function queryescape(url) {
+		return url.replace(/&amp;/g, '%26').replace(/&/g, '%26').replace(/=/g, '%3D');
+	}
 
 	// generates an unique id
    function makeId() {
@@ -258,7 +260,8 @@
 				}
 
 				// 1. clip properties, 2-3. metadata, 4. updates, 5. resumes from nested clip
-				if (arg1 && "onBeforeBegin,onMetaData,onStart,onUpdate,onResume".indexOf(evt) != -1) {
+                //#148 add onMetaDataChange event to extend clip properties, this was needed to prevent regular updates during stream switching.
+				if (arg1 && "onBeforeBegin,onMetaData,onMetaDataChange,onStart,onUpdate,onResume".indexOf(evt) != -1) {
 					// update clip properties
 					extend(target, arg1);
 
@@ -977,6 +980,10 @@ function Player(wrapper, params, conf) {
 			conf.clip.url = wrapper.getAttribute("href", 2);
 		}
 
+		if (conf.clip.url) {
+			conf.clip.url = queryescape(conf.clip.url);
+		}
+
 		commonClip = new Clip(conf.clip, -1, self);
 
 		// playlist
@@ -991,6 +998,10 @@ function Player(wrapper, params, conf) {
 			/* sometimes clip is given as array. this is not accepted. */
 			if (typeof clip == 'object' && clip.length) {
 				clip = {url: "" + clip};
+			}
+
+			if (clip.url) {
+				clip.url = queryescape(clip.url);
 			}
 
 			// populate common clip properties to each clip
@@ -1291,4 +1302,4 @@ if (typeof jQuery == 'function') {
 //}}}
 
 
-})();
+}();

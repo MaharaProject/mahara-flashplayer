@@ -1,5 +1,10 @@
 Version history:
 
+3.2.9
+-----
+- Reinstating the trackingObj config to configure the bridge mode. Default value is "window.pageTracker".
+- Debug view support was removed.
+
 3.2.8
 -----
 - Bridge mode now removed from code also

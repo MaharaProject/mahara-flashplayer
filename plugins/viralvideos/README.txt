@@ -1,5 +1,10 @@
 sVersion history:
 
+3.2.14
+------
+- Added helper methods hide() and show(). Can be used to show the viralvideos form when the dock is not used (or is hidden).
+- Sharing is now enabled in virally shared players. #110
+
 3.2.12
 ------
 - #606 check for controls first if disabled.
@@ -12,6 +17,8 @@ sVersion history:
 - #618 refactored server return to not require json output anymore and return success. Return success on all request errors with logging, return success on token error with logging. Added 3 new configurable email labels,
 "success", "required", "sending"
 - #12 if css method used as a getter just return the current style config.
+- #34 parse share config params from the player urls before generating the embed code.
+- #60 use new helper methods to hide / show the dock when auto hide is enabled or not.
 
 3.2.11
 ------

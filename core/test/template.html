@@ -1,7 +1,7 @@
 <html><head>
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
     <!--<script type="text/javascript" src="flowplayer-3.0.5.min.js"></script>-->
-    <script src="../flowplayer-3.2.6.min.js"></script>
+    <script src="../src/javascript/flowplayer.js/flowplayer-3.2.11.min.js"></script>
 
 
 	<!-- page title -->
@@ -18,27 +18,53 @@
 <script>
     flowplayer("player", "../build/flowplayer.swf",
     {
-        log: { level: 'debug', filter: 'org.flowplayer.bwcheck.*' },
-        onStart: function() {
-            console.log("onStart");
-        },
-
-        onFinish: function() {
-            console.log("onFinish");
-        },
-
-        onPause: function() {
-            console.log("onPause");
-        },
-
-        onResume: function() {
-            console.log("onResume");
-        },
+        log: { level: 'debug', filter: 'org.flowplayer.rtmp.*' },
 
         clip: {
+            provider: 'rtmp',
+//            bufferLength: 5,
+            url:'black-beatz',
+            live: true,
+
+            onStart: function() {
+                console.log("onStart");
+            },
+
+            onFinish: function() {
+                console.log("onFinish");
+            },
+
+            onBeforePause: function() {
+                console.log("onBeforePause");
+//                $f().stopBuffering();
+            },
+
+            onPause: function() {
+                console.log("onPause");
+            },
+
+            onBeforeResume: function() {
+                console.log("onBeforeResume");
+            },
+
+            onResume: function() {
+                console.log("onResume");
+            },
+
+            onStop: function() {
+                console.log("onStop");
+                $f().close();
+            }
+
         },
         plugins:
         {
+            rtmp: {
+                url: 'flowplayer.rtmp.swf',
+                netConnectionUrl: "rtmp://stream-7.antenne.de:80/liveedge",
+                failOverDelay: 4000,
+                connectionTimeout: 10000
+            }
         }
 
     });

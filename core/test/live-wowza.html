@@ -1,0 +1,75 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <!--<script type="text/javascript" src="flowplayer-3.0.5.min.js"></script>-->
+    <script src="../src/javascript/flowplayer.js/flowplayer-3.2.11.min.js"></script>
+
+
+	<!-- page title -->
+	<title>Minimal Flowplayer setup</title>
+
+</head><body>
+
+	<div id="page">
+        <a
+                     href="http://pseudo01.hddn.com/vod/demo.flowplayervod/flowplayer-700.flv"
+                     style="display:block;width:440px;height:247px"
+                     id="player">
+                </a>
+<script>
+    flowplayer("player", "../build/flowplayre.comm.swf",
+    {
+        log: { level: 'debug', filter: 'org.flowplayer.rtmp.*' },
+
+        clip: {
+            provider: 'rtmp',
+//            bufferLength: 5,
+            url:'black-beatz',
+            live: true,
+
+            onStart: function() {
+                console.log("onStart");
+            },
+
+            onFinish: function() {
+                console.log("onFinish");
+            },
+
+            onBeforePause: function() {
+                console.log("onBeforePause");
+//                $f().stopBuffering();
+            },
+
+            onPause: function() {
+                console.log("onPause");
+            },
+
+            onBeforeResume: function() {
+                console.log("onBeforeResume");
+            },
+
+            onResume: function() {
+                console.log("onResume");
+            },
+
+            onStop: function() {
+                console.log("onStop");
+                $f().close();
+            }
+
+        },
+        plugins:
+        {
+            rtmp: {
+                url: 'flowplayer.rtmp.swf',
+                netConnectionUrl: "rtmp://stream-7.antenne.de:80/liveedge",
+                failOverDelay: 4000,
+                connectionTimeout: 10000
+            }
+        }
+
+    });
+</script>
+	</div>
+	
+	
+</body></html>

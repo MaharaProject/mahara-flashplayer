@@ -17,23 +17,6 @@
  */
 
 package org.flowplayer.controller {
-    import org.flowplayer.controller.StreamProvider;
-    import org.flowplayer.controller.TimeProvider;
-    import org.flowplayer.controller.VolumeController;
-    import org.flowplayer.model.Clip;
-    import org.flowplayer.model.ClipError;
-    import org.flowplayer.model.ClipEvent;
-    import org.flowplayer.model.ClipEventType;
-    import org.flowplayer.model.EventType;
-    import org.flowplayer.model.Playlist;
-    import org.flowplayer.model.PluginEventType;
-    import org.flowplayer.model.PluginModel;
-    import org.flowplayer.model.ProviderModel;
-    import org.flowplayer.util.Assert;
-    import org.flowplayer.util.Log;
-    import org.flowplayer.view.Flowplayer;
-
-    import flash.utils.Dictionary;
     import flash.display.DisplayObject;
     import flash.errors.IOError;
     import flash.events.NetStatusEvent;
@@ -41,10 +24,22 @@ package org.flowplayer.controller {
     import flash.media.Video;
     import flash.net.NetConnection;
     import flash.net.NetStream;
+    import flash.utils.Dictionary;
     import flash.utils.Timer;
 
+    import org.flowplayer.model.Clip;
+    import org.flowplayer.model.ClipError;
+    import org.flowplayer.model.ClipEvent;
+    import org.flowplayer.model.ClipEventType;
+    import org.flowplayer.model.Playlist;
+    import org.flowplayer.model.PluginModel;
+    import org.flowplayer.model.ProviderModel;
+    import org.flowplayer.util.Assert;
+    import org.flowplayer.util.Log;
+    import org.flowplayer.view.Flowplayer;
+
     CONFIG::FLASH_10_1 {
-    import org.flowplayer.view.StageVideoWrapper;
+        import org.flowplayer.view.StageVideoWrapper;
     }
 
     /**
@@ -64,7 +59,7 @@ package org.flowplayer.controller {
         private var _pauseAfterStart:Boolean;
         private var _volumeController:VolumeController;
         private var _seekTargetWaitTimer:Timer;
-        private var _seekTarget:Number;
+        private var _seekTarget:Number = 0;
         private var _model:ProviderModel;
         private var _connectionProvider:ConnectionProvider;
         private var _clipUrlResolverHelper:ClipURLResolverHelper;
@@ -122,7 +117,7 @@ package org.flowplayer.controller {
         }
 
         private function _load(clip:Clip, pauseAfterStart:Boolean, attempts:int = 3):void {
-            Assert.notNull(clip, "load(clip): clip cannot be null");
+             Assert.notNull(clip, "load(clip): clip cannot be null");
             _paused = false;
             _stopping = false;
             _attempts = attempts;
@@ -138,23 +133,35 @@ package org.flowplayer.controller {
                 return clip.provider == (_model ? _model.name : (clip.parent ? 'httpInstream' : 'http'));
             });
 
-            //#614 when the clip ends if the next clip in the provider has a different provider close the provider stream.
-            clip.onFinish(closeStream, function():Boolean {
-                return _player.playlist.hasNext() && _player.playlist.nextClip.provider !== _model.name;
+            //#50 dispatch metadata events on updates also
+            clip.onMetaDataChange(onMetaData, function(clip:Clip):Boolean {
+                return clip.provider == (_model ? _model.name : (clip.parent ? 'httpInstream' : 'http'));
+            });
 
+            //#614 when the clip ends if the next clip in the provider has a different provider close the provider stream.
+            clip.onFinish(closeStream, function(clip:Clip):Boolean {
+                //#42 pass instream clips through and close the stream
+                if (clip.isInStream) return true;
+                return _player.playlist.hasNext() && _player.playlist.nextClip.provider !== _model.name;
             });
 
             clip.startDispatched = false;
+
             log.debug("previously started clip " + _startedClip);
             if (attempts == 3 && _startedClip && _startedClip == clip && _connection && _netStream) {
                 log.info("playing previous clip again, reusing existing connection and resuming");
                 _started = false;
                 replay(clip);
             } else {
-                log.debug("will create a new connection");
-                _startedClip = clip;
+               log.debug("will create a new connection");
+               _startedClip = clip;
 
-                connect(clip);
+               //#50 clear metadata when replaying in a playlist
+               if (clip.metaData != false) {
+                   clip.metaData = null;
+               }
+
+               connect(clip);
             }
         }
 
@@ -164,17 +171,19 @@ package org.flowplayer.controller {
          */
         private function closeStream(event:ClipEvent):void
         {
-            netStream.close();
+            if (netStream) netStream.close();
             _startedClip = null;
             event.target.unbind(closeStream);
         }
 
         private function replay(clip:Clip):void {
             try {
+                clip.dispatchEvent(new ClipEvent(ClipEventType.BEGIN, _pauseAfterStart));
+                //#52 when replaying flag start has dispatched on the current clip.
+                clip.startDispatched = true;
                 seek(new ClipEvent(ClipEventType.SEEK, 0), 0);
                 netStream.resume();
                 _started = true;
-                clip.dispatchEvent(new ClipEvent(ClipEventType.BEGIN, _pauseAfterStart));
                 clip.dispatchEvent(new ClipEvent(ClipEventType.START));
             } catch (e:Error) {
                 if (e.errorID == 2154) {
@@ -197,6 +206,7 @@ package org.flowplayer.controller {
          * @inheritDoc
          */
         public final function resume(event:ClipEvent):void {
+            log.debug("resume");
             _paused = false;
             _stopping = false;
             doResume(_netStream, event);
@@ -531,17 +541,23 @@ package org.flowplayer.controller {
         }
 
         protected function doSwitchStream(event:ClipEvent, netStream:NetStream, clip:Clip, netStreamPlayOptions:Object = null):void {
+            import flash.net.NetStreamPlayOptions;
+
             //fix for #279, switch and pause if the current clip is currently in a paused state
             //#404 implement netstreamplayoptions for http streams, resets the stream or start loading a new stream.
-            if (netStreamPlayOptions) {
-                pauseAfterStart = paused;
-                import flash.net.NetStreamPlayOptions;
-                if (netStreamPlayOptions is NetStreamPlayOptions) {
-					log.debug("doSwitchStream() calling play2()");
-                    //#461 when we have a clip base url set, we need the complete clip url sent to play2 for http streams.
-                    netStreamPlayOptions.streamName = clip.completeUrl;
-					netStream.play2(netStreamPlayOptions as NetStreamPlayOptions);
-				}
+            //implement switch support for flash9 players that do not support dynamic switching
+            if (CONFIG::FLASH_10_1) {
+                if (netStreamPlayOptions) {
+                    pauseAfterStart = paused;
+                    if (netStreamPlayOptions is NetStreamPlayOptions) {
+                        log.debug("doSwitchStream() calling play2()");
+                        //#461 when we have a clip base url set, we need the complete clip url sent to play2 for http streams.
+                        netStreamPlayOptions.streamName = clip.completeUrl;
+                        netStream.play2(netStreamPlayOptions as NetStreamPlayOptions);
+                    }
+                } else {
+                    load(event, clip, this._paused);
+                }
             } else {
                 load(event, clip, this._paused);
             }
@@ -769,6 +785,7 @@ package org.flowplayer.controller {
 
                 //				dispatchPlayEvent(ClipEventType.STOP);
             } else if (event.info.code == "NetStream.Seek.Notify") {
+
                 if (! silentSeek) {
                     startSeekTargetWait();
                 } else {
@@ -802,6 +819,8 @@ package org.flowplayer.controller {
 
         private function onConnectionSuccess(connection:NetConnection):void {
             _connection = connection;
+            //reset start dispatching if reconnecting
+            clip.startDispatched = false;
             //#430 adding event listeners for netconnection
             connection.addEventListener(NetStatusEvent.NET_STATUS, _onNetStatus);
             _createNetStream();
@@ -813,14 +832,23 @@ package org.flowplayer.controller {
             if (_seekTarget < 0) return;
             if (_seekTargetWaitTimer && _seekTargetWaitTimer.running) return;
             log.debug("starting seek target wait timer");
+
+            if (_seekTargetWaitTimer) {
+                _seekTargetWaitTimer.reset();
+                _seekTargetWaitTimer.removeEventListener(TimerEvent.TIMER, onSeekTargetWait);
+                _seekTargetWaitTimer = null;
+            }
+
             _seekTargetWaitTimer = new Timer(200);
             _seekTargetWaitTimer.addEventListener(TimerEvent.TIMER, onSeekTargetWait);
             _seekTargetWaitTimer.start();
         }
 
         private function onSeekTargetWait(event:TimerEvent):void {
-            if (time >= _seekTarget) {
-                _seekTargetWaitTimer.stop();
+            //#104 if the updated time is a fraction less than the seek target time ie for HDS, use a bitwise rounding so the seek time can stop.
+            if ((time|0) >= (_seekTarget|0)) {
+                _seekTargetWaitTimer.reset();
+                _seekTargetWaitTimer.removeEventListener(TimerEvent.TIMER, onSeekTargetWait);
                 log.debug("dispatching onSeek");
                 dispatchPlayEvent(ClipEventType.SEEK, _seekTarget);
                 _seekTarget = -1;
@@ -837,31 +865,9 @@ package org.flowplayer.controller {
             _stopping = true;
 
             if (clip.live) {
-                _netStream.close();
-                _netStream = null;
-
+               this.closeStreamAndConnection(netStream);
             } else if (closeStreamAndConnection) {
-                _startedClip = null;
-                log.debug("doStop(), closing netStream and connection");
-
-                if (clip.getContent() is Video) {
-                    Video(clip.getContent()).clear();
-                }
-
-                try {
-                    netStream.close();
-                    _netStream = null;
-                } catch (e:Error) {
-                }
-
-                if (_connection) {
-                    _connection.close();
-                    _connection = null;
-                }
-
-                dispatchPlayEvent(ClipEventType.BUFFER_STOP);
-
-//                clip.setContent(null);
+               this.closeStreamAndConnection(netStream);
             } else {
                 silentSeek = true;
                 //#9 when replaying from stopping, connection does not receive callbacks anymore.
@@ -872,10 +878,31 @@ package org.flowplayer.controller {
             dispatchEvent(event);
         }
 
+       private function closeStreamAndConnection(netStream:NetStream):void {
+          _startedClip = null;
+          log.debug("doStop(), closing netStream and connection");
+
+          try {
+             netStream.close();
+             _netStream.removeEventListener(NetStatusEvent.NET_STATUS, _onNetStatus);
+             _netStream = null;
+          } catch (e:Error) {
+          }
+
+          if (_connection) {
+             _connection.close();
+             _connection.removeEventListener(NetStatusEvent.NET_STATUS, _onNetStatus);
+             _connection = null;
+          }
+
+          dispatchPlayEvent(ClipEventType.BUFFER_STOP);
+       }
+
         private function _createNetStream():void {
             _netStream = createNetStream(_connection) || new NetStream(_connection);
             netStream.client = new NetStreamClient(clip, _player.config, _streamCallbacks);
             _netStream.bufferTime = clip.bufferLength;
+            log.debug("using buffer time of " + _netStream.bufferTime);
             _volumeController.netStream = _netStream;
             clip.setNetStream(_netStream);
             _netStream.addEventListener(NetStatusEvent.NET_STATUS, _onNetStatus);

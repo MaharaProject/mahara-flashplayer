@@ -16,9 +16,6 @@ package org.flowplayer.bwcheck.net {
     import org.flowplayer.view.Flowplayer;
     import org.flowplayer.controller.ClipURLResolver;
     import org.flowplayer.util.Log;
-    import org.flowplayer.util.PropertyBinder;
-
-
 
     import org.flowplayer.model.DisplayProperties;
 
@@ -27,17 +24,17 @@ package org.flowplayer.bwcheck.net {
 
     import org.flowplayer.bwcheck.config.Config;
 
-    import org.osmf.net.DynamicStreamingItem;
-    import org.osmf.net.NetStreamMetricsBase;
-import org.osmf.net.NetStreamSwitchManager;
+    import org.osmf.net.NetStreamSwitchManagerBase;
 
-public class BWStreamSelectionManager extends StreamSelectionManager {
+    CONFIG::enableRtmpMetrics {
+        import org.osmf.net.NetStreamSwitchManager;
+    }
+
+    public class BWStreamSelectionManager extends StreamSelectionManager {
 
         private var _config:Config;
         private static var bwSelectLog:Log = new Log("org.flowplayer.bwcheck.net::BWStreamSelectionManager");
-        private var dynamicStreamingItems:Vector.<DynamicStreamingItem>;
-        //private var _netStreamMetrics:NetStreamMetricsBase;
-        private var _netStreamSwitchManager:NetStreamSwitchManager;
+        private var _netStreamSwitchManager:NetStreamSwitchManagerBase;
 
         public function BWStreamSelectionManager(bitrateResource:BitrateResource, player:Flowplayer, resolver:ClipURLResolver, config:Config) {
             super(bitrateResource, player, resolver);
@@ -45,10 +42,6 @@ public class BWStreamSelectionManager extends StreamSelectionManager {
         }
 
         override public function getStreamIndex(bandwidth:Number):Number {
-
-            //#417 if screen size rule is disabled do not do screen size checks for the index.
-            if (!_config.qos.screen) return super.getStreamIndex(bandwidth);
-
             for (var i:Number = streamItems.length - 1; i >= 0; i--) {
 
                 var item:BitrateItem = streamItems[i];
@@ -71,7 +64,8 @@ public class BWStreamSelectionManager extends StreamSelectionManager {
         }
 
         internal static function fitsScreen(item:BitrateItem, player:Flowplayer, config:Config):Boolean {
-            if (! item.width) return true;
+            //#47 regression with 417 disable screen checks with the qos screen property
+            if (! item.width || !config.qos.screen) return true;
 
             var screen:DisplayProperties = player.screen;
             var stage:Stage = screen.getDisplayObject().stage;
@@ -98,8 +92,16 @@ public class BWStreamSelectionManager extends StreamSelectionManager {
         override public function fromName(name:String):BitrateItem {
             var item:BitrateItem = super.fromName(name);
 
-            if (_netStreamSwitchManager) {
-                return item ? item : getItem(_netStreamSwitchManager.netStreamMetrics.currentIndex);
+            CONFIG::enableRtmpMetrics {
+                if (_netStreamSwitchManager) {
+                    return item ? item : getItem(NetStreamSwitchManager(_netStreamSwitchManager).netStreamMetrics.currentIndex);
+                }
+            }
+
+            CONFIG::enableHttpMetrics {
+                if (_netStreamSwitchManager) {
+                    return item ? item : getItem(_netStreamSwitchManager.currentIndex);
+                }
             }
 
             return item;
@@ -122,7 +124,7 @@ public class BWStreamSelectionManager extends StreamSelectionManager {
             if (_netStreamSwitchManager) _netStreamSwitchManager.currentIndex = value.index;
         }
 
-        public function set qosSwitchManager(value:NetStreamSwitchManager):void {
+        public function set qosSwitchManager(value:NetStreamSwitchManagerBase):void {
             _netStreamSwitchManager = value;
         }
     }
