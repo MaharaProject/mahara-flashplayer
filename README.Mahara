@@ -5,7 +5,10 @@ This flash video player is used by the Mahara internal media blocktype.
 It is based on the FlowPlayer source code. In accordance with the FlowPlayer
 GPL license, it has been renamed to "mahara-flashplayer" for distribution.
 
-Website: https://github.com/catalyst/mahara-flashplayer
+Website: 
+ - https://git.nzoss.org.nz/mahara/mahara-flashplayer
+ - https://git.nzoss.org.nz/mahara/mahara-flashplayer-flash-build
+ - https://git.nzoss.org.nz/mahara/mahara-flashplayer-tld
 Version: 3.2.18
 
 Modifications:
@@ -17,13 +20,13 @@ GPL License addendum, the FlowPlayer mark and logo have been removed
 
 === BUILD INSTRUCTIONS ===
 
-1. There are outdated build instructions up on the flowplayer website, at http://flash.flowplayer.org/documentation/developer/development-environment.html and http://flash.flowplayer.org/documentation/developer/building-in-plugins.html . You may still get some useful information from them. The main difference is that the build files now live in the flash-build (aka mahara-flashplayer-build) project.
+1. There are outdated build instructions up on the flowplayer website, at http://flash.flowplayer.org/documentation/developer/development-environment.html and http://flash.flowplayer.org/documentation/developer/building-in-plugins.html . You may still get some useful information from them. The main difference is that the build files now live in the flash-build (aka mahara-flashplayer-flash-build) project.
 
 2. Install Apache ant, and install the Flex SDK. You will need to know the path to your Flex SDK's bin directory.
 
-3. Clone the mahara-flashplayer/tld and mahara-flashplayer/flash-build projects in addition to this one (the mahara-flashplayer project)
+3. Clone the mahara-flashplayer-tld and mahara-flashplayer-flash-build projects in addition to this one (the mahara-flashplayer project)
 
-4. The build scripts are in the mahara-flashplayer-build project. They expect the three repositories you've cloned to be in a directory together, and to be named "tld", "flash-build", and "flash". You can accomplish this by either moving the directories, or creating symlinks.
+4. The build scripts are in the mahara-flashplayer-flash-build project. They expect the three repositories you've cloned to be in a directory together, and to be named "tld", "flash-build", and "flash". You can accomplish this by either moving the directories, or creating symlinks.
 
 5. cd into the flash-build directory.
 
