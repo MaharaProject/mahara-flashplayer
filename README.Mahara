@@ -1,7 +1,9 @@
 mahara-flashplayer
 =====================
 
-This flash video player is used by the Mahara internal media blocktype.
+[Deprecated] This code is unmaintained as the Mahara project does not use Flash anymore.
+
+This flash video player was used by the Mahara internal media blocktype.
 It is based on the FlowPlayer source code. In accordance with the FlowPlayer
 GPL license, it has been renamed to "mahara-flashplayer" for distribution.
 
